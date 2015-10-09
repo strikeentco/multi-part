@@ -1,5 +1,6 @@
-multi-part
+multi-part [![License](https://img.shields.io/github/license/strikeentco/multi-part.svg)](https://github.com/strikeentco/multi-part/blob/master/LICENSE) [![npm](https://img.shields.io/npm/v/multi-part.svg)](https://www.npmjs.com/package/multi-part)
 ==========
+[![Build Status](https://travis-ci.org/strikeentco/multi-part.svg)](https://travis-ci.org/strikeentco/multi-part) [![node](https://img.shields.io/node/v/multi-part.svg)](https://www.npmjs.com/package/multi-part) [![Test Coverage](https://codeclimate.com/github/strikeentco/multi-part/badges/coverage.svg)](https://codeclimate.com/github/strikeentco/multi-part/coverage) [![bitHound Score](https://www.bithound.io/github/strikeentco/multi-part/badges/score.svg)](https://www.bithound.io/github/strikeentco/multi-part)
 
 A `multi-part` library allows you to create multipart/form-data `stream` or `buffer` which can be used to submit forms and file uploads to other web applications.
 
