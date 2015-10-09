@@ -1,0 +1,45 @@
+{
+  "name": "multi-part",
+  "author": "Alexey Bystrov <strikeentco@gmail.com>",
+  "version": "1.0.0",
+  "engines": {
+    "node": ">=0.12.0"
+  },
+  "description": "Simple multipart/form-data implementation for your requests. Supports: Strings, Numbers, Arrays, Streams, Buffers and Vinyl.",
+  "keywords": [
+    "multi-part",
+    "form",
+    "data",
+    "buffer",
+    "stream",
+    "vinyl",
+    "form-data",
+    "multipart"
+  ],
+  "main": "./main.js",
+  "scripts": {
+    "test": "mocha test",
+    "test-on-travis": "istanbul cover --report lcovonly ./node_modules/mocha/bin/_mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/strikeentco/multi-part.git"
+  },
+  "bugs": {
+    "url": "https://github.com/strikeentco/multi-part/issues"
+  },
+  "dependencies": {
+    "mime-kind": "^1.0.2",
+    "object-assign": "^4.0.1"
+  },
+  "devDependencies": {
+    "express": "^4.13.3",
+    "got": "^4.2.0",
+    "mocha": "^2.3.3",
+    "multer": "^1.0.6",
+    "rimraf": "^2.4.3",
+    "should": "^7.1.0",
+    "vinyl": "^1.0.0"
+  },
+  "license": "MIT"
+}
