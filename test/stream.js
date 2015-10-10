@@ -167,7 +167,7 @@ describe('multi-part()', function() {
           multipart = new MultipartStream();
           multipart.append('photo', got.stream('http://127.0.0.1:1001'));
           multipart.get().on('error', function(err) {
-            should(err.message).be.eql('connect ECONNREFUSED 127.0.0.1:1001');
+            should(err.message).startWith('connect ECONNREFUSED');
             done();
           });
         });
@@ -177,7 +177,7 @@ describe('multi-part()', function() {
           multipart.append('field', 12345);
           multipart.append('field', null);
           multipart._append = {};
-          should(function() { return multipart.get();}).throw('this._append is not a function');
+          should(function() { return multipart.get();}).throw();
         });
 
         it('should throw', function(done) {
@@ -187,7 +187,7 @@ describe('multi-part()', function() {
           multipart.append('photo', fs.createReadStream(file));
           multipart.append('field', null);
           multipart.get().on('error', function(e) {
-            should(e.message).be.eql('connect ECONNREFUSED 127.0.0.1:80');
+            should(e.message).startWith('connect ECONNREFUSED');
             done();
           });
         });

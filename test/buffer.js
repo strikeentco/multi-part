@@ -170,7 +170,7 @@ describe('multi-part()', function() {
           multipart.append('field', null);
           multipart.get(function(err, data) {
             if (err) {
-              should(err.message).be.eql('connect ECONNREFUSED 127.0.0.1:2000');
+              should(err.message).startWith('connect ECONNREFUSED');
               done();
             }
           });
@@ -181,7 +181,7 @@ describe('multi-part()', function() {
           multipart.append('photo', require('http').request('http://127.0.0.1:2001'));
           multipart.get(function(err, data) {
             if (err) {
-              should(err.message).be.eql('connect ECONNREFUSED 127.0.0.1:2001');
+              should(err.message).startWith('connect ECONNREFUSED');
               done();
             }
           });
@@ -203,16 +203,15 @@ describe('multi-part()', function() {
           });
         });
 
-        it('should throw', function(done) {
+        it('should throw', function() {
           multipart = new MultipartBuffer();
           multipart.append('photo', [stream, photo]);
           stream.on('data', function() {
             delete multipart._current;
           });
 
-          multipart.get(function(err, data) {
-            should(err.message).be.eql('Cannot read property \'push\' of undefined');
-            done();
+          return multipart.get().catch(function(err) {
+            should(err.message).be.not.empty();
           });
         });
       });
