@@ -147,7 +147,7 @@ form.append('array', 1);
 
 All data, including `streams`, will be converted to `Buffer`, so in most case it's possible to automatically determine content type, in case content type is undetermined, it will be set as `application/octet-stream`.
 
-### .get([options], [callback]) or .getMultipart([options], [callback])
+### .get([callback]) or .getMultipart([callback])
 
 > Unlike stream mode, in buffer mode all data will be converted to `Buffer` and placed in memory, this is asynchronous operation.
 
