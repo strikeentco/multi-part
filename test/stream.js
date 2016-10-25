@@ -294,7 +294,7 @@ describe('multi-part()', function () {
       it('should throw', (done) => {
         const form = new Multipart();
         form.append('field', 12345);
-        form.append('photo', http.request('127.0.0.1'));
+        form.append('photo', http.request({ hostname: '127.0.0.1' }));
         form.append('photo', fs.createReadStream(photoFile));
         form.append('field', null);
         form.stream().on('error', (e) => {
