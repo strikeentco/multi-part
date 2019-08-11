@@ -1,150 +1,168 @@
 'use strict';
 
-const CombinedStream = require('./lib/combine');
-const helpers = require('./lib/helpers');
+/* eslint-disable class-methods-use-this, no-await-in-loop, max-len */
 
-const isString = helpers.isString;
-const isNumber = helpers.isNumber;
-const isObject = helpers.isObject;
-const isStream = helpers.isStream;
-const isHTTPStream = helpers.isHTTPStream;
-const isBuffer = helpers.isBuffer;
-const isArray = helpers.isArray;
-const isVinyl = helpers.isVinyl;
+const { basename } = require('path');
+const MultipartLite = require('multi-part-lite');
+const {
+  isBuffer, isStream, isHTTPStream, isVinyl
+} = require('multi-part-lite/lib/helpers');
+const mime = require('mime-kind');
 
-const toStream = helpers.toStream;
-const getFileName = helpers.getFileName;
-const getContentType = helpers.getContentType;
-const genBoundary = helpers.genBoundary;
+const {
+  init, started, ended, stack, generate, next, length
+} = MultipartLite.symbols;
 
 const CRLF = '\r\n';
 
-class Multipart {
-  constructor(opts) {
-    this.opts = Object.assign({}, opts);
-    this.boundary = this.opts.boundary || genBoundary(this.opts.boundaryPrefix);
-    this.headers = {
-      'transfer-encoding': 'chunked',
-      'content-type': `multipart/form-data; boundary="${this.getBoundary()}"`
-    };
-    this.body = [];
-    this._storage = [];
-  }
-
-  _append(data) {
-    Array.prototype.push.call(this.body, toStream(data));
-  }
-
-  _proccess(n) {
-    if (!n) {
-      if (this.body && this.body.length) {
-        return this._append(`--${this.getBoundary()}--`);
-      }
-
-      return;
+class Multipart extends MultipartLite {
+  /**
+   * Returns file name of val
+   * @param {Object} val
+   * @param {String} [val.filename]
+   * @param {String} [val.path]
+   * @param {Object} defaults
+   * @param {String} defaults.name
+   * @param {String} defaults.ext
+   * @returns {String}
+   */
+  getFileName(val, { name, ext, type }) {
+    if (isBuffer(val)) {
+      return `${name}.${mime.sync(val, type).ext}`;
     }
 
-    this._genBody(n);
+    const filename = val.filename || val.path;
+
+    if (filename) {
+      return basename(filename);
+    }
+
+    return `${name}.${ext}`;
   }
 
-  _genBody(n) {
-    let buf = n.stream;
-    let opts = n.options;
+  /**
+   * Returns content-type of val
+   * @param {Object} val
+   * @param {String} [val.contentType]
+   * @param {Object} defaults
+   * @param {String} defaults.type
+   * @returns {String}
+   */
+  getContentType(val, { type }) {
+    return val.contentType || mime.sync(val.filename, type).mime;
+  }
+}
 
+class MultipartAsync extends MultipartLite {
+  /**
+   * Returns file name of val
+   * @param {Object} val
+   * @param {String} [val.filename]
+   * @param {String} [val.path]
+   * @param {Object} defaults
+   * @param {String} defaults.name
+   * @param {String} defaults.ext
+   * @returns {Promise<String>}
+   * @async
+   */
+  async getFileName(val, { name, ext, type }) {
+    if (isBuffer(val)) {
+      const m = await mime.async(val, type);
+      return `${name}.${m.ext}`;
+    }
+
+    const filename = val.filename || val.path;
+
+    if (filename) {
+      return basename(filename);
+    }
+
+    return `${name}.${ext}`;
+  }
+
+  /**
+   * Returns content-type of val
+   * @param {Object} val
+   * @param {String} [val.contentType]
+   * @param {Object} defaults
+   * @param {String} defaults.type
+   * @returns {Promise<String>}
+   * @async
+   */
+  async getContentType(val, { type }) {
+    if (val.contentType) {
+      return val.contentType;
+    }
+    const m = await mime.async(val.filename, type);
+    return m.mime;
+  }
+
+  async [init]() {
+    if (this[ended] || this[started]) {
+      return;
+    }
+    this[started] = true;
+    let value = this[stack].shift();
+    while (value) {
+      await this[generate](...value);
+      value = this[stack].shift();
+    }
+    this._append(`--${this.getBoundary()}--`, CRLF);
+    this[ended] = true;
+    this[next]();
+  }
+
+  async [generate](field, value, { filename, contentType }) {
     this._append(`--${this.getBoundary()}${CRLF}`);
-    this._append(`Content-Disposition: form-data; name="${n.name}"`);
-
-    if (isStream(buf) || isBuffer(buf) || isVinyl(buf) || isHTTPStream(buf)) {
-      let contentType;
-      if (isVinyl(buf)) {
-        opts = Object.assign({}, opts);
-        if (!opts.filename && buf.basename) {
-          opts.filename = buf.basename;
-        }
-        buf = buf.contents;
+    this._append(`Content-Disposition: form-data; name="${field}"`);
+    if (isBuffer(value) || isStream(value) || isHTTPStream(value) || isVinyl(value)) {
+      if (isVinyl(value)) {
+        filename = filename || value.basename;
+        value = value.contents;
       }
-
-      const filename = (opts && opts.filename) ? getFileName(opts) : getFileName(buf);
-      this._append(`; filename="${filename}"${CRLF}`);
-      if (opts && (opts.filename || opts.contentType)) {
-        contentType = getContentType(opts);
-      } else {
-        contentType = getContentType({ filename });
-      }
-
-      this._append(`Content-Type: ${contentType}${CRLF}`);
+      const file = await this.getFileName(filename ? { filename } : value, this.opts.defaults);
+      this._append(`; filename="${file}"${CRLF}`);
+      const type = await this.getContentType({ filename: filename || file, contentType }, this.opts.defaults);
+      this._append(`Content-Type: ${type}${CRLF}`);
     } else {
       this._append(CRLF);
     }
 
-    this._append(CRLF);
-    this._append(buf);
-    this._append(CRLF);
-
-    this._proccess(this._storage.shift());
+    return this._append(CRLF, value, CRLF);
   }
 
-  getBoundary() {
-    return this.boundary;
-  }
-
-  getHeaders() {
-    return this.headers;
-  }
-
-  append(name, stream, options) {
-    if (!name || (!isNumber(name) && !isString(name))) {
-      throw new TypeError('Name must be specified and must be a string or a number');
-    }
-
-    if (isArray(stream)) {
-      if (!stream.length) {
-        stream = '';
-      } else {
-        for (let i = 0; i < stream.length; i++) {
-          this.append(name, stream[i], options);
-        }
-
-        return this;
-      }
-    }
-
-    if (stream === true || stream === false || stream === null) {
-      stream = +stream;
-    }
-
-    if (isNumber(stream)) {
-      stream += '';
-    }
-
-    if (isObject(options)) {
-      this._storage.push({ name, stream, options });
-    } else {
-      this._storage.push({ name, stream });
-    }
-
+  /**
+   * Returns stream
+   * @returns {Promise<this>}
+   * @async
+   */
+  async stream() {
+    await this[init]();
     return this;
   }
 
-  stream() {
-    if (!(this._stream instanceof CombinedStream)) {
-      this._proccess(this._storage.shift());
-      this._stream = new CombinedStream(this.body);
-    }
-
-    return this._stream;
-  }
-
-  streamWithOptions(opts) {
-    return Object.assign(
-      { headers: this.getHeaders() },
-      isObject(opts) ? opts : {},
-      { body: this.stream() }
-    );
+  /**
+   * Returns buffer of the stream
+   * @returns {Promise<Buffer>}
+   * @async
+   */
+  async buffer() {
+    return new Promise((resolve, reject) => {
+      this.once('error', reject);
+      const buffer = [];
+      this.on('data', (data) => {
+        buffer.push(data);
+      });
+      this.on('end', () => {
+        const body = Buffer.concat(buffer);
+        this[length] = Buffer.byteLength(body);
+        return resolve(body);
+      });
+      return this[init]().catch(reject);
+    });
   }
 }
 
-Multipart.prototype.getStream = Multipart.prototype.stream;
-Multipart.prototype.getStreamWithOptions = Multipart.prototype.streamWithOptions;
-
 module.exports = Multipart;
+module.exports.MultipartSync = Multipart;
+module.exports.MultipartAsync = MultipartAsync;

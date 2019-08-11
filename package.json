@@ -1,9 +1,9 @@
 {
   "name": "multi-part",
   "author": "Alexey Bystrov <strikeentco@gmail.com>",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "engines": {
-    "node": ">=4.0.0"
+    "node": ">=8.3.0"
   },
   "description": "Simple multipart/form-data implementation with automatic data type detection. Supports: Strings, Numbers, Arrays, Streams, Buffers and Vinyl.",
   "keywords": [
@@ -18,15 +18,14 @@
   ],
   "main": "./main.js",
   "files": [
-    "lib",
     "main.js"
   ],
   "scripts": {
     "test": "mocha test",
-    "lint": "eslint main.js lib/**",
+    "lint": "eslint main.js",
     "check": "npm run lint && npm run test",
-    "cover": "istanbul cover ./node_modules/mocha/bin/_mocha",
-    "test-on-travis": "istanbul cover --report lcovonly ./node_modules/mocha/bin/_mocha"
+    "cover": "nyc ./node_modules/mocha/bin/_mocha && nyc report --reporter=html",
+    "test-on-travis": "nyc ./node_modules/mocha/bin/_mocha && nyc report --reporter=lcovonly"
   },
   "repository": {
     "type": "git",
@@ -36,20 +35,22 @@
     "url": "https://github.com/strikeentco/multi-part/issues"
   },
   "dependencies": {
-    "mime-kind": "^2.0.1"
+    "mime-kind": "^3.0.0",
+    "multi-part-lite": "^1.0.0"
   },
   "devDependencies": {
-    "eslint": "^3.8.1",
-    "eslint-config-airbnb": "^12.0.0",
-    "eslint-plugin-import": "^1.16.0",
-    "eslint-plugin-jsx-a11y": "^2.2.3",
-    "eslint-plugin-react": "^6.4.1",
-    "express": "^4.14.0",
-    "got": "^6.5.0",
-    "mocha": "^3.1.2",
-    "multer": "^1.2.0",
-    "should": "^11.1.1",
-    "vinyl": "^2.0.0"
+    "eslint": "^5.16.0",
+    "eslint-config-airbnb": "^17.1.1",
+    "eslint-plugin-import": "^2.18.2",
+    "eslint-plugin-jsx-a11y": "^6.2.3",
+    "eslint-plugin-react": "^7.14.3",
+    "express": "^4.17.1",
+    "got": "^9.6.0",
+    "mocha": "^6.2.0",
+    "multer": "^1.4.2",
+    "nyc": "^14.1.1",
+    "should": "^13.2.3",
+    "vinyl": "^2.2.0"
   },
   "license": "MIT"
 }

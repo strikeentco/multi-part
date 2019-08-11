@@ -11,7 +11,7 @@ const got = require('got');
 const app = require('express')();
 const multer = require('multer');
 
-const Multipart = require('../main');
+const { MultipartAsync: Multipart } = require('../main');
 
 const upload = multer({ dest: `${__dirname}/uploads/` });
 const photoFile = `${__dirname}/fixture/fixture.jpg`;
@@ -31,7 +31,7 @@ const photoVinyl = new File({
   contents: chunkSync({ path: photoFile, flags: 'r' }, 9379)
 });
 
-describe('multi-part.sync().stream()', function () {
+describe('multi-part.async().stream()', function () {
   let server;
   this.timeout(10000);
   before((done) => {
@@ -64,9 +64,10 @@ describe('multi-part.sync().stream()', function () {
   });
 
   describe('append nothing', () => {
-    it('should be ok', () => {
+    it('should be ok', async () => {
       const form = new Multipart();
-      return got.post('http://127.0.0.1:4000', { headers: form.getHeaders(), body: form.stream() }).then((res) => {
+      const body = await form.stream();
+      return got.post('http://127.0.0.1:4000', { headers: form.getHeaders(), body }).then((res) => {
         should(res.body).be.eql('"Nothing"');
       });
     });
@@ -85,7 +86,7 @@ describe('multi-part.sync().stream()', function () {
           done();
         });
       });
-      form.stream().pipe(req);
+      form.stream().then(body => body.pipe(req));
     });
 
     it('should throw', () => {
@@ -96,18 +97,20 @@ describe('multi-part.sync().stream()', function () {
   });
 
   describe('append vinyl', () => {
-    it('should be ok', () => {
+    it('should be ok', async () => {
       const form = new Multipart();
       form.append('photo', photoVinyl);
-      return got.post('http://127.0.0.1:4000', { headers: form.getHeaders(), body: form.stream() }).then((res) => {
+      const body = await form.stream();
+      return got.post('http://127.0.0.1:4000', { headers: form.getHeaders(), body }).then((res) => {
         should(JSON.parse(res.body)).be.eql({ filename: 'anon.jpg', mime: 'image/jpeg', fields: {} });
       });
     });
 
-    it('should be ok', () => {
+    it('should be ok', async () => {
       const form = new Multipart();
       form.append('photo', photoVinyl, { filename: 'anon.jpg' });
-      return got.post('http://127.0.0.1:4000', { headers: form.getHeaders(), body: form.stream() }).then((res) => {
+      const body = await form.stream();
+      return got.post('http://127.0.0.1:4000', { headers: form.getHeaders(), body }).then((res) => {
         should(JSON.parse(res.body)).be.eql({ filename: 'anon.jpg', mime: 'image/jpeg', fields: {} });
       });
     });
@@ -127,17 +130,18 @@ describe('multi-part.sync().stream()', function () {
           done();
         });
       });
-      form.stream().pipe(req);
+      form.stream().then(body => body.pipe(req));
     });
   });
 
   describe('append array', () => {
-    it('should be ok', () => {
+    it('should be ok', async () => {
       const form = new Multipart();
       form.append('array', ['arr', ['arr1', 'arr2'], 'arr3', null]);
       form.append('photo', photoVinyl);
       form.append('array', []);
-      return got.post('http://127.0.0.1:4000', { headers: form.getHeaders(), body: form.stream() }).then((res) => {
+      const body = await form.stream();
+      return got.post('http://127.0.0.1:4000', { headers: form.getHeaders(), body }).then((res) => {
         should(JSON.parse(res.body)).be.eql({ filename: 'anon.jpg', mime: 'image/jpeg', fields: { array: ['arr', 'arr1', 'arr2', 'arr3', '0', ''] } });
       });
     });
@@ -159,47 +163,51 @@ describe('multi-part.sync().stream()', function () {
           done();
         });
       });
-      form.stream().pipe(req);
+      form.stream().then(body => body.pipe(req));
     });
   });
 
   describe('append stream', () => {
-    it('should be ok', () => {
+    it('should be ok', async () => {
       const form = new Multipart();
       form.append('field', 12345);
       form.append('photo', fs.createReadStream(photoFile));
       form.append('field', null);
-      return got.post('http://127.0.0.1:4000', { headers: form.getHeaders(), body: form.stream() }).then((res) => {
+      const body = await form.stream();
+      return got.post('http://127.0.0.1:4000', { headers: form.getHeaders(), body }).then((res) => {
         should(JSON.parse(res.body)).be.eql({ filename: 'fixture.jpg', mime: 'image/jpeg', fields: { field: ['12345', '0'] } });
       });
     });
 
-    it('should be ok', () => {
+    it('should be ok', async () => {
       const form = new Multipart();
       form.append('field', 12345);
       form.append('photo', fs.createReadStream(photoFile), { filename: 'a.jpg', contentType: 'image/jpeg' });
       form.append('field', null);
-      return got.post('http://127.0.0.1:4000', { headers: form.getHeaders(), body: form.stream() }).then((res) => {
+      const body = await form.stream();
+      return got.post('http://127.0.0.1:4000', { headers: form.getHeaders(), body }).then((res) => {
         should(res.body).be.eql('{"filename":"a.jpg","mime":"image/jpeg","fields":{"field":["12345","0"]}}');
       });
     });
 
-    it('should be ok', () => {
+    it('should be ok', async () => {
       const form = new Multipart();
       form.append('field', 12345);
       form.append('photo', fs.createReadStream(photoFile), { filename: 'a.jpg' });
       form.append('field', null);
-      return got.post('http://127.0.0.1:4000', { headers: form.getHeaders(), body: form.stream() }).then((res) => {
+      const body = await form.stream();
+      return got.post('http://127.0.0.1:4000', { headers: form.getHeaders(), body }).then((res) => {
         should(res.body).be.eql('{"filename":"a.jpg","mime":"image/jpeg","fields":{"field":["12345","0"]}}');
       });
     });
 
-    it('should be ok', () => {
+    it('should be ok', async () => {
       const form = new Multipart();
       form.append('field', 12345);
       form.append('photo', fs.createReadStream(photoFile), { contentType: 'image/jpeg' });
       form.append('field', null);
-      return got.post('http://127.0.0.1:4000', { headers: form.getHeaders(), body: form.stream() }).then((res) => {
+      const body = await form.stream();
+      return got.post('http://127.0.0.1:4000', { headers: form.getHeaders(), body }).then((res) => {
         should(res.body).be.eql('{"filename":"fixture.jpg","mime":"image/jpeg","fields":{"field":["12345","0"]}}');
       });
     });
@@ -209,10 +217,12 @@ describe('multi-part.sync().stream()', function () {
       form.append('field', 12345);
       form.append('photo', https.request('https://avatars1.githubusercontent.com/u/2401029'));
       form.append('field', null);
-      await got.post('http://127.0.0.1:4000', { headers: form.getHeaders(), body: form.stream() }).then((res) => {
+      let body = await form.stream();
+      await got.post('http://127.0.0.1:4000', { headers: form.getHeaders(), body }).then((res) => {
         should(res.body).be.eql('{"filename":"2401029","mime":"application/octet-stream","fields":{"field":["12345","0"]}}');
       });
-      await got.post('http://127.0.0.1:4000', { headers: form.getHeaders(), body: form.stream() }).then((res) => {
+      body = await form.stream();
+      await got.post('http://127.0.0.1:4000', { headers: form.getHeaders(), body }).then((res) => {
         should(res.body).be.eql('"Nothing"');
       });
     });
@@ -234,10 +244,10 @@ describe('multi-part.sync().stream()', function () {
           done();
         });
       });
-      form.stream().pipe(req);
+      form.stream().then(body => body.pipe(req));
     });
 
-    it('should be ok', () => {
+    it('should be ok', async () => {
       const stream = new Stream();
       stream.readable = true;
 
@@ -248,12 +258,13 @@ describe('multi-part.sync().stream()', function () {
 
       const form = new Multipart();
       form.append('field', stream);
-      return got.post('http://127.0.0.1:4000', { headers: form.getHeaders(), body: form.stream() }).then((res) => {
+      const body = await form.stream();
+      return got.post('http://127.0.0.1:4000', { headers: form.getHeaders(), body }).then((res) => {
         should(res.body).be.eql('"Nothing"');
       });
     });
 
-    it('should be ok', () => {
+    it('should be ok', async () => {
       const stream = new Stream();
       stream.readable = true;
 
@@ -264,12 +275,13 @@ describe('multi-part.sync().stream()', function () {
         stream.emit('end');
         stream.emit('close');
       }, 50);
-      return got.post('http://127.0.0.1:4000', { headers: form.getHeaders(), body: form.stream() }).then((res) => {
+      const body = await form.stream();
+      return got.post('http://127.0.0.1:4000', { headers: form.getHeaders(), body }).then((res) => {
         should(res.body).be.eql('"Nothing"');
       });
     });
 
-    it('should throw', () => {
+    it('should throw', async () => {
       const stream = new Stream();
       stream.readable = true;
       stream.destroy = () => {
@@ -281,12 +293,13 @@ describe('multi-part.sync().stream()', function () {
       setTimeout(() => {
         stream.emit('error');
       }, 50);
-      return got.post('http://127.0.0.1:4000', { headers: form.getHeaders(), body: form.stream() }).catch((e) => {
+      const body = await form.stream();
+      return got.post('http://127.0.0.1:4000', { headers: form.getHeaders(), body }).catch((e) => {
         should(e.message).be.eql('Response code 500 (Internal Server Error)');
       });
     });
 
-    it('should be ok', () => {
+    it('should be ok', async () => {
       const stream = new Stream();
       stream.readable = true;
       stream.destroy = () => {
@@ -302,33 +315,31 @@ describe('multi-part.sync().stream()', function () {
       form.append('field', 12345);
       form.append('photo', https.request('https://avatars1.githubusercontent.com/u/2401029'));
       form.append('field', stream);
-      return got.post('http://127.0.0.1:4000', { headers: form.getHeaders(), body: form.stream() }).then((res) => {
+      const body = await form.stream();
+      return got.post('http://127.0.0.1:4000', { headers: form.getHeaders(), body }).then((res) => {
         should(res.body).be.eql('{"filename":"2401029","mime":"application/octet-stream","fields":{"field":["12345",""]}}');
       });
     });
 
     it('should be ok', (done) => {
       https.get('https://avatars1.githubusercontent.com/u/2401029')
-        .on('response', (photo) => {
+        .on('response', async (photo) => {
           const form = new Multipart();
           form.append('field', 12345);
           form.append('photo', photo);
           form.append('field', null);
-          got.post('http://127.0.0.1:4000', { headers: form.getHeaders(), body: form.stream() }).then((res) => {
+          const body = await form.stream();
+          got.post('http://127.0.0.1:4000', { headers: form.getHeaders(), body }).then((res) => {
             should(res.body).be.eql('{"filename":"file.bin","mime":"application/octet-stream","fields":{"field":["12345","0"]}}');
             done();
           });
         });
     });
 
-    it('should throw', (done) => {
+    it('should throw', () => {
       const form = new Multipart();
-      form.once('error', (err) => {
-        should(err.message).startWith('connect ECONNREFUSED');
-        done();
-      });
       form.append('photo', got.stream('http://127.0.0.1', { retries: 0 }));
-      form.stream().pipe(new Stream.PassThrough());
+      return form.stream().catch(e => should(e.message).startWith('connect ECONNREFUSED'));
     });
 
     it('should throw', () => {
@@ -336,7 +347,7 @@ describe('multi-part.sync().stream()', function () {
       form.append('field', 12345);
       form.append('field', null);
       form._append = {};
-      should(() => form.stream().pipe(new Stream.PassThrough())).throw();
+      return form.stream().catch(e => should(e.message).startWith('this._append is not a function'));
     });
 
     it('should throw', (done) => {
@@ -349,48 +360,52 @@ describe('multi-part.sync().stream()', function () {
         should(e.message).startWith('connect ECONNREFUSED');
         done();
       });
-      form.stream().pipe(new Stream.PassThrough());
+      form.stream();
     });
   });
 
   describe('append buffer', () => {
     const photoBuffer = chunkSync({ path: photoFile, flags: 'r' }, 9379);
-    it('should be ok', () => {
+    it('should be ok', async () => {
       const form = new Multipart();
       form.append('field', 12345);
       form.append('photo', photoBuffer);
       form.append('field', null);
-      return got.post('http://127.0.0.1:4000', { headers: form.getHeaders(), body: form.stream() }).then((res) => {
+      const body = await form.stream();
+      return got.post('http://127.0.0.1:4000', { headers: form.getHeaders(), body }).then((res) => {
         should(res.body).be.eql('{"filename":"file.jpg","mime":"image/jpeg","fields":{"field":["12345","0"]}}');
       });
     });
 
-    it('should be ok', () => {
+    it('should be ok', async () => {
       const form = new Multipart();
       form.append('field', 12345);
       form.append('photo', photoBuffer, { filename: 'a.jpg', contentType: 'image/jpeg' });
       form.append('field', null);
-      return got.post('http://127.0.0.1:4000', { headers: form.getHeaders(), body: form.stream() }).then((res) => {
+      const body = await form.stream();
+      return got.post('http://127.0.0.1:4000', { headers: form.getHeaders(), body }).then((res) => {
         should(res.body).be.eql('{"filename":"a.jpg","mime":"image/jpeg","fields":{"field":["12345","0"]}}');
       });
     });
 
-    it('should be ok', () => {
+    it('should be ok', async () => {
       const form = new Multipart();
       form.append('field', 12345);
       form.append('photo', photoBuffer, { filename: 'a.jpg' });
       form.append('field', null);
-      return got.post('http://127.0.0.1:4000', { headers: form.getHeaders(), body: form.stream() }).then((res) => {
+      const body = await form.stream();
+      return got.post('http://127.0.0.1:4000', { headers: form.getHeaders(), body }).then((res) => {
         should(res.body).be.eql('{"filename":"a.jpg","mime":"image/jpeg","fields":{"field":["12345","0"]}}');
       });
     });
 
-    it('should be ok', () => {
+    it('should be ok', async () => {
       const form = new Multipart();
       form.append('field', 12345);
       form.append('photo', photoBuffer, { contentType: 'image/jpeg' });
       form.append('field', null);
-      return got.post('http://127.0.0.1:4000', { headers: form.getHeaders(), body: form.stream() }).then((res) => {
+      const body = await form.stream();
+      return got.post('http://127.0.0.1:4000', { headers: form.getHeaders(), body }).then((res) => {
         should(res.body).be.eql('{"filename":"file.jpg","mime":"image/jpeg","fields":{"field":["12345","0"]}}');
       });
     });
@@ -412,7 +427,7 @@ describe('multi-part.sync().stream()', function () {
           done();
         });
       });
-      form.stream().pipe(req);
+      form.stream().then(body => body.pipe(req));
     });
   });
 });
