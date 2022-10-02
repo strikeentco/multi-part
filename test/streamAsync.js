@@ -86,7 +86,7 @@ describe('multi-part.async().stream()', function () {
           done();
         });
       });
-      form.stream().then(body => body.pipe(req));
+      form.stream().then((body) => body.pipe(req));
     });
 
     it('should throw', () => {
@@ -130,7 +130,7 @@ describe('multi-part.async().stream()', function () {
           done();
         });
       });
-      form.stream().then(body => body.pipe(req));
+      form.stream().then((body) => body.pipe(req));
     });
   });
 
@@ -163,7 +163,7 @@ describe('multi-part.async().stream()', function () {
           done();
         });
       });
-      form.stream().then(body => body.pipe(req));
+      form.stream().then((body) => body.pipe(req));
     });
   });
 
@@ -244,7 +244,7 @@ describe('multi-part.async().stream()', function () {
           done();
         });
       });
-      form.stream().then(body => body.pipe(req));
+      form.stream().then((body) => body.pipe(req));
     });
 
     it('should be ok', async () => {
@@ -252,8 +252,8 @@ describe('multi-part.async().stream()', function () {
       stream.readable = true;
 
       setTimeout(() => {
-        stream.emit('close');
         stream.emit('end');
+        stream.emit('close');
       }, 50);
 
       const form = new Multipart();
@@ -339,7 +339,7 @@ describe('multi-part.async().stream()', function () {
     it('should throw', () => {
       const form = new Multipart();
       form.append('photo', got.stream('http://127.0.0.1', { retries: 0 }));
-      return form.stream().catch(e => should(e.message).startWith('connect ECONNREFUSED'));
+      return form.stream().catch((e) => should(e.message).startWith('connect ECONNREFUSED'));
     });
 
     it('should throw', () => {
@@ -347,7 +347,7 @@ describe('multi-part.async().stream()', function () {
       form.append('field', 12345);
       form.append('field', null);
       form._append = {};
-      return form.stream().catch(e => should(e.message).startWith('this._append is not a function'));
+      return form.stream().catch((e) => should(e.message).startWith('this._append is not a function'));
     });
 
     it('should throw', (done) => {
@@ -427,7 +427,7 @@ describe('multi-part.async().stream()', function () {
           done();
         });
       });
-      form.stream().then(body => body.pipe(req));
+      form.stream().then((body) => body.pipe(req));
     });
   });
 });
