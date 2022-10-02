@@ -24,13 +24,16 @@ const form = new Multipart();
 form.append('photo', got.stream('https://avatars1.githubusercontent.com/u/2401029'));
 form.append('field', 'multi-part test');
 
-got.post('127.0.0.1:3000', { headers: form.getHeaders(), body: form.stream() });
+(async () => {
+  const body = await form.stream();
+  got.post('127.0.0.1:3000', { headers: form.getHeaders(), body });
+})()
 ```
 Usage with `got` as `Buffer`:
 
 ```js
 const got = require('got');
-const { MultipartSync: Multipart } = require('multi-part');
+const Multipart = require('multi-part');
 const form = new Multipart();
 
 form.append('photo', got.stream('https://avatars1.githubusercontent.com/u/2401029'));
@@ -46,7 +49,7 @@ Usage with `http`/`https` as `Stream`:
 ```js
 const http = require('http');
 const https = require('https');
-const { MultipartAsync: Multipart } = require('multi-part');
+const Multipart = require('multi-part');
 const form = new Multipart();
 
 form.append('photo', https.request('https://avatars1.githubusercontent.com/u/2401029'));
@@ -61,7 +64,7 @@ Usage with `http`/`https` as `Buffer`:
 ```js
 const http = require('http');
 const https = require('https');
-const { MultipartAsync: Multipart } = require('multi-part');
+const Multipart = require('multi-part');
 const form = new Multipart();
 
 form.append('photo', https.request('https://avatars1.githubusercontent.com/u/2401029'));
@@ -75,12 +78,7 @@ form.append('photo', https.request('https://avatars1.githubusercontent.com/u/240
 
 # API
 
-There are two versions of `Multipart`: `sync` and `async`. The difference is, that `MultipartAsync` will use `async` methods to determine content type and will not block event loop.
-
-Also, `MultipartAsync` version can determine the content type of any `ReadableStream`, opposite `MultipartSync` which can only determine the content type of `fs.ReadStream`.
-
 ### new Multipart([options])
-### new MultipartSync([options])
 ### new MultipartAsync([options])
 
 Constructor.
@@ -95,8 +93,8 @@ Constructor.
     * **[type]** (*String*) - File content-type which will be used, if `contentType` is not specified in the options of `.append` method. By default `application/octet-stream`.
 
 ```js
-const MultipartSync = require('multi-part');
-const { MultipartSync, MultipartAsync } = require('multi-part');
+const Multipart = require('multi-part');
+const { MultipartAsync } = require('multi-part');
 ```
 
 ### .append(name, value, [options])
@@ -107,7 +105,7 @@ Adds a new data to the `multipart/form-data` stream.
 * **name** (*String|Number*) - Field name. Ex: `photo`.
 * **value** (*Mixed*) - Value can be `String`, `Number`, `Array`, `Buffer`, `ReadableStream` or even [Vynil](https://www.npmjs.com/package/vinyl).
 * **[options]** (*Object*) - Additional options:
-  * **filename**  (*String*) - File name. If you appending a remote stream using `MultipartSync` it's recommended to specify file name with extension, otherwise `file.bin` will be set. Ex: `anonim.jpg`.
+  * **filename**  (*String*) - File name. Ex: `anonim.jpg`.
   * **contentType** (*String*) - File content type. It's not necessary if you have already specified file name. If you are not sure about the content type - leave `filename` and `contentType` empty and it will be automatically determined, if possible. Ex: `image/jpeg`.
 
 If `value` is an array, `append` will be called for each value:
@@ -128,9 +126,7 @@ For `Buffer` and `ReadableStream` content type will be automatically determined,
 
 ### .stream()
 
-`MultipartSync`: returns a `multipart/form-data` stream.
-
-`MultipartAsync`: returns a `Promise` with a `multipart/form-data` stream.
+Returns a `Promise` with a `multipart/form-data` stream.
 
 ### .buffer()
 
@@ -192,4 +188,4 @@ form.getHeaders(false); // ->
 ## License
 
 The MIT License (MIT)<br/>
-Copyright (c) 2015-2019 Alexey Bystrov
+Copyright (c) 2015-2022 Alexey Bystrov

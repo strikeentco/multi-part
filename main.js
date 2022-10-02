@@ -1,6 +1,6 @@
 'use strict';
 
-/* eslint-disable class-methods-use-this, no-await-in-loop, max-len */
+/* eslint-disable class-methods-use-this, no-await-in-loop, max-len, no-promise-executor-return */
 
 const { basename } = require('path');
 const MultipartLite = require('multi-part-lite');
@@ -16,44 +16,6 @@ const {
 const CRLF = '\r\n';
 
 class Multipart extends MultipartLite {
-  /**
-   * Returns file name of val
-   * @param {Object} val
-   * @param {String} [val.filename]
-   * @param {String} [val.path]
-   * @param {Object} defaults
-   * @param {String} defaults.name
-   * @param {String} defaults.ext
-   * @returns {String}
-   */
-  getFileName(val, { name, ext, type }) {
-    if (isBuffer(val)) {
-      return `${name}.${mime.sync(val, type).ext}`;
-    }
-
-    const filename = val.filename || val.path;
-
-    if (filename) {
-      return basename(filename);
-    }
-
-    return `${name}.${ext}`;
-  }
-
-  /**
-   * Returns content-type of val
-   * @param {Object} val
-   * @param {String} [val.contentType]
-   * @param {Object} defaults
-   * @param {String} defaults.type
-   * @returns {String}
-   */
-  getContentType(val, { type }) {
-    return val.contentType || mime.sync(val.filename, type).mime;
-  }
-}
-
-class MultipartAsync extends MultipartLite {
   /**
    * Returns file name of val
    * @param {Object} val
@@ -164,5 +126,4 @@ class MultipartAsync extends MultipartLite {
 }
 
 module.exports = Multipart;
-module.exports.MultipartSync = Multipart;
-module.exports.MultipartAsync = MultipartAsync;
+module.exports.MultipartAsync = Multipart;
